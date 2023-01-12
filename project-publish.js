@@ -1,4 +1,6 @@
+const fs = require("fs")
 const iconv = require("iconv-lite")
+
 const decode = (data) =>
   iconv.decode(data, utools.isWindows() ? "cp936" : "utf8")
 const log = (data) => console.log(decode(data))
@@ -68,8 +70,6 @@ class Run {
       .map((dirent) => dirent.name)
       .filter((dir) => !/403|404|demo|__open-in-editor/.test(dir))
       .sort()
-
-    console.log(this.pageList)
 
     this.showPageList()
   }
@@ -143,9 +143,9 @@ class Run {
 
   getPublishUrl() {
     const zpfeConfig = require(`${config.root}/${this.selectProject}/zpfe-config.js`)
-    const host =
-      zpfeConfig.env[this.publishEnv === "prod" ? "production" : "pre"].host
-    this.publishUrl = `https://front-end.zhaopin.com/publish/builds?host=${host}&module=.&env=${this.publishEnv}}&key=builds`
+    const env = this.publishEnv === "prod" ? "production" : "pre"
+    const host = zpfeConfig.env[env].host
+    this.publishUrl = `https://front-end.zhaopin.com/publish/builds?host=${host}&module=.&env=${env}}&key=builds`
   }
 
   async startPublish() {
@@ -186,12 +186,12 @@ class Run {
   openBrowser({ buildEntryPattern, description }) {
     if (!buildEntryPattern) throw new Error("buildEntryPattern is required")
 
-    /** https://u.tools/docs/developer/ubrowser.html */
-    const u = utools.ubrowser.goto(`${this.jenkinsUrl}/build`)
-
     const branch = this.publishEnv === "prod" ? "master" : "pre"
 
-    u.when("#choice-parameter-33702964895238218")
+    /** https://u.tools/docs/developer/ubrowser.html */
+    const u = utools.ubrowser
+      .goto(`${this.jenkinsUrl}/build`)
+      .when("#choice-parameter-33702964895238218")
       .value("#choice-parameter-33702964895238218 > select", branch)
       .value(
         "#main-panel > form > table > tbody:nth-child(9) > tr:nth-child(1) > td.setting-main > div > input.setting-input",
@@ -267,3 +267,6 @@ try {
 } catch (e) {
   error(e.message)
 }
+
+module.exports = () => { }
+
