@@ -17,7 +17,7 @@ class Run {
   constructor() {
     this.time = new Date().toLocaleTimeString()
 
-    /** 构建页面的分组集合 */
+    /** 构建工件的分组集合 */
     this.ubrowsers = []
 
     /** Jenkins项目页面地址 */
@@ -29,14 +29,14 @@ class Run {
     /** 构建环境 */
     this.publishEnv = ""
 
-    /** 最终发布的所有页面 */
-    this.publishPage = []
+    /** 最终发布的所有工件 */
+    this.publishEntry = []
 
-    /** 过滤掉的页面 */
-    this.ignorePage = new Map()
+    /** 过滤掉的工件 */
+    this.ignoreEntry = new Map()
 
-    /** 工程下的所有页面 */
-    this.pageList = []
+    /** 可发布的所有工件 */
+    this.entryList = []
 
     /** 选中的工程 */
     this.selectProject = ""
@@ -58,24 +58,47 @@ class Run {
     const choise = await quickcommand.showSelectList(this.dirList)
     this.selectProject = choise.text
 
-    quickcommand.setTimeout(() => this.showPages(), 0)
+    quickcommand.setTimeout(() => this.showEntrys(), 0)
   }
 
-  showPages() {
-    this.pageList = fs
-      .readdirSync(`${config.root}/${this.selectProject}/pages`, {
-        withFileTypes: true,
-      })
+  showEntrys() {
+    const pages = fs
+      .readdirSync(
+        `${config.root}/${this.selectProject}/pages`,
+        { withFileTypes: true }
+      )
       .filter((dirent) => dirent.isDirectory())
       .map((dirent) => dirent.name)
       .filter((dir) => !/403|404|demo|__open-in-editor/.test(dir))
       .sort()
 
-    this.showPageList()
+    const extensions = []
+
+    fs
+      .readdirSync(
+        `${config.root}/${this.selectProject}/extensions`,
+        { withFileTypes: true, }
+      )
+      .filter((dirent) => dirent.isDirectory())
+      .map((dirent) => {
+        if (dirent.isFile() && dirent.name === "request-context.js") extensions.push(dirent.name)
+        if (dirent.isDirectory()) {
+          fs
+            .readdirSync(
+              `${config.root}/${this.selectProject}/extensions/${dirent.name}`,
+              { withFileTypes: true }
+            )
+            .map((extensionDirent) => extensions.push(extensionDirent.name))
+        }
+      })
+
+    this.entryList = [...new Set([...pages, ...extensions].filter(Boolean))]
+
+    this.showEntryList()
   }
 
-  showPageList(times = 0) {
-    const options = [...this.pageList.map((dir) => `<div>${dir}</div>`)]
+  showEntryList(times = 0) {
+    const options = [...this.entryList.map((dir) => `<div>${dir}</div>`)]
     if (times === 0) {
       options.push(`<div style="color:red">选好了</div>`)
     }
@@ -86,30 +109,30 @@ class Run {
         if (text === "选好了") {
           await this.getPublishInfo()
         } else {
-          this.pickPage(text, choise)
-          this.showPageList(++times)
+          this.pickEntry(text, choise)
+          this.showEntryList(++times)
         }
       })
   }
 
-  pickPage(page, choise) {
-    if (this.ignorePage.has(page)) {
-      quickcommand.updateSelectList(page, choise.id)
-      this.ignorePage.delete(page)
+  pickEntry(entry, choise) {
+    if (this.ignoreEntry.has(entry)) {
+      quickcommand.updateSelectList(entry, choise.id)
+      this.ignoreEntry.delete(entry)
     } else {
-      quickcommand.updateSelectList(`<del>${page}</del>`, choise.id)
-      this.ignorePage.set(page, choise.id)
+      quickcommand.updateSelectList(`<del>${entry}</del>`, choise.id)
+      this.ignoreEntry.set(entry, choise.id)
     }
   }
 
   async getPublishInfo() {
-    this.publishPage = this.pageList.filter(
-      (page) => ![...this.ignorePage.keys()].includes(page)
+    this.publishEntry = this.entryList.filter(
+      (entry) => ![...this.ignoreEntry.keys()].includes(entry)
     )
 
     await this.selectPublishEnv()
 
-    this.getBatchPage()
+    this.getBatchEntry()
 
     this.getJenkinsUrl()
 
@@ -128,8 +151,8 @@ class Run {
     this.publishEnv = ["", "debug", "pre", "prod"][button.id]
   }
 
-  getBatchPage() {
-    const tempList = [...this.publishPage]
+  getBatchEntry() {
+    const tempList = [...this.publishEntry]
     while (tempList.length) {
       const batchStr = tempList.splice(0, config.batchSize).join(",")
       this.ubrowsers.push(batchStr)
@@ -245,9 +268,9 @@ class Run {
         jenkinsUrl: this.jenkinsUrl,
         publishUrl: this.publishUrl,
         ubrowsers: this.ubrowsers,
-        publishPage: this.publishPage,
-        ignorePage: [...this.ignorePage],
-        pageList: this.pageList,
+        publishEntry: this.publishEntry,
+        ignoreEntry: [...this.ignoreEntry],
+        entryList: this.entryList,
         publishEnv: this.publishEnv,
         selectProject: this.selectProject,
         dirList: this.dirList,
