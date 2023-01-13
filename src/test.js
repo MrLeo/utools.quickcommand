@@ -20,6 +20,9 @@ quickcommand.showWaitButton(() => {
 }, "停止运行")
 
 
+/**
+ * 脚本内容
+ */
 exports.default = {
   a: "a",
   b: function () {
