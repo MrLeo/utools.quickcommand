@@ -80,3 +80,5 @@
   copyTo(types)
   message("已复制剪贴板")
 })()
+
+module.exports = () => {}
