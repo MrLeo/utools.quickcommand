@@ -53,4 +53,6 @@ Object.keys(project).forEach((key) => {
     })
   })
 })
+
+quickcommand.writeClipboard(result.join("\n"))
 console.log(result.join("\n"))
