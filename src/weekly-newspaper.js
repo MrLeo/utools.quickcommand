@@ -26,7 +26,7 @@ const arr = [...new Set(middleStr.match(/(.*)/g))].filter(Boolean)
 const project = {}
 let tempProject = ""
 while (arr.length) {
-  let row = (arr.shift() || "").replace(/归档/g, "已上线")
+  let row = (arr.shift() || "").replace(/\((归档|Done)\)/gi, "已上线")
 
   if (/^#/.test(row)) {
     tempProject = row.replace(/^#\s*(\d+\s*\/\s*)?/, "")
@@ -45,11 +45,11 @@ while (arr.length) {
 
 const result = []
 Object.keys(project).forEach((key) => {
-  result.push(`\n## ${key}`)
+  result.push(`\n# ${key}`)
   Object.keys(project[key]).forEach((subKey) => {
     result.push(`- ${subKey}`)
     project[key][subKey].forEach((task) => {
-      result.push(`  * ${task}`)
+      result.push(`    * ${task}`)
     })
   })
 })
