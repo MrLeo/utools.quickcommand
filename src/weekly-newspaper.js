@@ -47,7 +47,7 @@ const result = []
 Object.keys(project).forEach((key) => {
   result.push(`\n# ${key}`)
   Object.keys(project[key]).forEach((subKey) => {
-    result.push(`- ${subKey}`)
+    result.push(`\n- ${subKey}`)
     project[key][subKey].forEach((task) => {
       result.push(`    * ${task}`)
     })
