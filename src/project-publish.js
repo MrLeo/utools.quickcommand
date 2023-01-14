@@ -7,9 +7,9 @@ const log = (data) => console.log(decode(data))
 const error = (data) => console.error(decode(data))
 
 const config = {
-  /** 工程目录根路径 */
+  /** 本地工程目录根路径 */
   root: `/Users/leo/zhaopin/code`,
-  /** Jenkins地址 */
+  /** Jenkins域名 */
   jenkinsBaseUrl: `https://jenkins.dev.zhaopin.com`,
   /** 初始页面批次大小 */
   batchSize: 5,
