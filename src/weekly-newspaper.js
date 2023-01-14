@@ -24,6 +24,7 @@ let middleStr = quickcommand.readClipboard()
 const arr = [...new Set(middleStr.match(/(.*)/g))].filter(Boolean)
 
 const project = {}
+
 let tempProject = ""
 while (arr.length) {
   let row = (arr.shift() || "").replace(/\((归档|Done)\)/gi, "(已上线)")
