@@ -29,3 +29,4 @@ exports.default = {
     console.log("b")
   },
 }
+module.exports = () => {}

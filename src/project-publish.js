@@ -292,5 +292,3 @@ try {
 }
 
 module.exports = () => { }
-
-// require('/Users/leo/www/utools/quickcommand/project-publish.js')
