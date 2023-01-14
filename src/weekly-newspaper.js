@@ -42,7 +42,6 @@ while (arr.length) {
     }
   }
 }
-console.log(`[LOG] -> project`, project)
 
 const result = []
 Object.keys(project).forEach((key) => {
