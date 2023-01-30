@@ -1,23 +1,15 @@
 ;(async () => {
-  console.log(`[enterData] -> ${quickcommand.enterData}`)
-
+  // console.log(`[enterData] -> ${quickcommand.enterData}`)
   let payload = quickcommand.enterData.payload
-  console.log(`[payload] -> ${payload}`)
 
   if (/(^|\/)pages\//.test(payload)) {
     const replaceReg = /.*\/?pages\/([^\/]*)\/.*/
     payload = payload.replace(replaceReg, "$1")
-    console.log(
-      `[payload] -> replace(${replaceReg.toString()},'$1') -> ${payload}`
-    )
   }
 
   if (/\.vue$/.test(payload)) {
     const replaceReg = /(.*\/)?([^\.]*)\.vue$/
     payload = payload.replace(replaceReg, "$2")
-    console.log(
-      `[payload] -> replace(${replaceReg.toString()},'$1') -> ${payload}`
-    )
   }
 
   quickcommand
@@ -70,9 +62,7 @@
     .then((choise) => {
       const txt = choise.title
       utools.copyText(txt)
+      console.log(txt)
       message(`${txt} 已复制`)
-      utools.outPlugin()
     })
 })()
-
-module.exports = () => {}
