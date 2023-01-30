@@ -62,7 +62,9 @@
     .then((choise) => {
       const txt = choise.title
       utools.copyText(txt)
-      console.log(txt)
+      send(txt)
       message(`${txt} 已复制`)
+      utools.hideMainWindow()
+      utools.outPlugin()
     })
 })()
