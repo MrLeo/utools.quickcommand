@@ -60,11 +60,11 @@
       { optionType: "json", closeOnSelect: true }
     )
     .then((choise) => {
+      utools.hideMainWindow()
       const txt = choise.title
       utools.copyText(txt)
       send(txt)
       message(`${txt} 已复制`)
-      utools.hideMainWindow()
       utools.outPlugin()
     })
 })()
