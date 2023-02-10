@@ -1,6 +1,7 @@
 # uTools 快捷命令脚本
 
 - [GitHub](https://github.com/MrLeo/utools.quickcommand)
+- [gitee](https://gitee.com/mr.leo/utools.quickcommand)
 
 
 # 相关链接
