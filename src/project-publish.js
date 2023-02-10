@@ -1,3 +1,6 @@
+/**
+ * https://gitee.com/mr.leo/utools.quickcommand/raw/main/src/project-publish.js
+ */
 const fs = require("fs")
 const iconv = require("iconv-lite")
 
