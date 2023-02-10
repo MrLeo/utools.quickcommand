@@ -83,7 +83,7 @@ class Run {
       )
       .filter((dirent) => dirent.isDirectory())
       .map((dirent) => {
-        if (dirent.isFile() && dirent.name === "request-context.js") extensions.push(dirent.name)
+        // if (dirent.isFile() && dirent.name === "request-context.js") extensions.push(dirent.name)
         if (dirent.isDirectory()) {
           fs
             .readdirSync(
