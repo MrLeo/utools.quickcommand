@@ -11,6 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "iconv-lite": "^0.6.3",
+    "input": "^1.0.1",
+    "telegram": "^2.15.5",
     "zx": "^7.1.1"
   }
 }
