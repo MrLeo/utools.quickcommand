@@ -1,5 +1,8 @@
 /**
  * https://gitee.com/mr.leo/utools.quickcommand/raw/main/src/project-publish.js
+ * https://yuanliao.info/d/424-301/387
+ * https://www.yuque.com/fofolee/qcdocs3/pt589p
+ * https://u.tools/docs/developer/api.html
  */
 const fs = require("fs")
 const iconv = require("iconv-lite")
@@ -66,58 +69,51 @@ class Run {
     quickcommand.setTimeout(() => this.showEntrys(), 0)
   }
 
-  showEntrys() {
+  async showEntrys() {
     const pages = fs
-      .readdirSync(
-        `${config.root}/${this.selectProject}/pages`,
-        { withFileTypes: true }
-      )
+      .readdirSync(`${config.root}/${this.selectProject}/pages`, {
+        withFileTypes: true,
+      })
       .filter((dirent) => dirent.isDirectory())
       .map((dirent) => dirent.name)
       .filter((dir) => !/403|404|demo|__open-in-editor/.test(dir))
       .sort()
 
     const extensions = []
-
-    fs
-      .readdirSync(
-        `${config.root}/${this.selectProject}/extensions`,
-        { withFileTypes: true, }
-      )
-      .filter((dirent) => dirent.isDirectory())
-      .map((dirent) => {
-        // if (dirent.isFile() && dirent.name === "request-context.js") extensions.push(dirent.name)
-        if (dirent.isDirectory()) {
-          fs
-            .readdirSync(
+    fs.existsSync(`${config.root}/${this.selectProject}/extensions`) &&
+      fs
+        .readdirSync(`${config.root}/${this.selectProject}/extensions`, {
+          withFileTypes: true,
+        })
+        .filter((dirent) => dirent.isDirectory())
+        .map((dirent) => {
+          // if (dirent.isFile() && dirent.name === "request-context.js") extensions.push(dirent.name)
+          if (dirent.isDirectory()) {
+            fs.readdirSync(
               `${config.root}/${this.selectProject}/extensions/${dirent.name}`,
               { withFileTypes: true }
-            )
-            .map((extensionDirent) => extensions.push(extensionDirent.name))
-        }
-      })
+            ).map((extensionDirent) => extensions.push(extensionDirent.name))
+          }
+        })
 
     this.entryList = [...new Set([...pages, ...extensions].filter(Boolean))]
 
-    this.showEntryList()
+    await this.showEntryList()
   }
 
-  showEntryList(times = 0) {
+  async showEntryList(times = 0) {
     const options = [...this.entryList.map((dir) => `<div>${dir}</div>`)]
-    if (times === 0) {
-      options.push(`<div style="color:red">选好了</div>`)
+    if (times === 0) options.push(`<div style="color:red">选好了</div>`)
+    const choise = await quickcommand.showSelectList(options, {
+      optionType: "html",
+    })
+    const text = quickcommand.htmlParse(choise.text).body.innerText
+    if (text === "选好了") {
+      quickcommand.setTimeout(() => this.getPublishInfo(), 0)
+    } else {
+      this.pickEntry(text, choise)
+      await this.showEntryList(++times)
     }
-    quickcommand
-      .showSelectList(options, { optionType: "html" })
-      .then(async (choise) => {
-        const text = quickcommand.htmlParse(choise.text).body.innerText
-        if (text === "选好了") {
-          await this.getPublishInfo()
-        } else {
-          this.pickEntry(text, choise)
-          this.showEntryList(++times)
-        }
-      })
   }
 
   pickEntry(entry, choise) {
@@ -147,13 +143,16 @@ class Run {
   }
 
   async selectPublishEnv() {
-    let button = await quickcommand.showButtonBox([
-      "取消",
-      "Debug",
-      "打开Jenkins - Pre",
-      "打开Jenkins - Prod",
-    ])
-    this.publishEnv = ["", "debug", "pre", "prod"][button.id]
+    const choise = await quickcommand.showSelectList(
+      [
+        `<div style="color:#95a5a6">取消</div>`,
+        `<div style="color:#e74c3c">Debug</div>`,
+        `<div style="color:#3498db">打开Jenkins - Pre</div>`,
+        `<div style="color:#3498db">打开Jenkins - Prod</div>`,
+      ],
+      { optionType: "html" }
+    )
+    this.publishEnv = ["", "debug", "pre", "prod"][choise.id]
   }
 
   getBatchEntry() {
@@ -177,38 +176,72 @@ class Run {
   }
 
   async startPublish() {
-    if (this.publishEnv === "debug") {
-      let button = await quickcommand.showButtonBox(
-        this.ubrowsers.map((item, index) => `${index + 1}. ${item}`)
-      )
-      const buildEntryPattern = this.ubrowsers[button.id]
-      this.openBrowser({
-        buildEntryPattern,
-        description: `[${this.time}] - ${button.id + 1}`,
-      })
+    const choise = await quickcommand.showSelectList(
+      [
+        ...this.ubrowsers.map((item, index) => `${index}. ${item}`),
+        `<div style="background-color:#e74c3c;color:#fff;">全部</div>`,
+      ],
+      { optionType: "html" }
+    )
+
+    if (choise.id < this.ubrowsers.length) {
+      this.pickPublish(choise.id)
     } else {
-      this.ubrowsers.forEach((buildEntryPattern, index) =>
-        this.openBrowser({
-          buildEntryPattern,
-          description: `[${this.time}] - ${index + 1}`,
-        })
-      )
+      this.autoPublishAll()
     }
+  }
 
-    this.republish()
+  autoPublishAll(index = 0) {
+    const buildEntryPattern = this.ubrowsers[index]
+    this.openBrowser({
+      buildEntryPattern,
+      description: `[${this.time}] - ${index || 0}`,
+    })
+    if (index < this.ubrowsers.length - 1) {
+      quickcommand.setTimeout(() => this.autoPublishAll(index + 1), 1000)
+    } else {
+      quickcommand.setTimeout(() => {
+        this.republish()
+        this.output()
+      }, 100)
+    }
+  }
 
-    this.output()
+  async pickPublish(index = 0) {
+    const buildEntryPattern = this.ubrowsers[index]
+    this.openBrowser({
+      buildEntryPattern,
+      description: `[${this.time}] - ${index || 0}`,
+    })
 
-    quickcommand.setTimeout(() => visit(this.jenkinsUrl), 2000)
+    quickcommand.updateSelectList(
+      `<div style="color:#70a1ff;">继续选择异常构建</div>`,
+      this.ubrowsers.length
+    )
+    quickcommand.updateSelectList(
+      `<del>${index}. ${buildEntryPattern}</del>`,
+      index
+    )
 
-    quickcommand.setTimeout(() => {
-      // quickcommand.wakeUtools()
-      visit(this.publishUrl)
-    }, 10000)
+    quickcommand.wakeUtools()
+    utools.showMainWindow()
 
-    quickcommand.showWaitButton(() => {
-      utools.outPlugin()
-    }, "停止运行")
+    const choise = await quickcommand.showSelectList(
+      [
+        ...this.ubrowsers.map((item, i) => `${i}. ${item}`),
+        `<div style="color:#70a1ff;">继续选择异常构建</div>`,
+      ],
+      { optionType: "html" }
+    )
+
+    if (choise.id < this.ubrowsers.length) {
+      this.pickPublish(choise.id)
+    } else {
+      quickcommand.setTimeout(() => {
+        this.republish()
+        this.output()
+      }, 100)
+    }
   }
 
   openBrowser({ buildEntryPattern, description }) {
@@ -234,15 +267,18 @@ class Run {
       u.devTools("right")
       u.run({ width: 2000, height: 2000 })
     } else {
-      u.wait(2000).click("#yui-gen1-button")
+      // u.wait(2000).click("#yui-gen1-button")
       u.run({ width: 1000, height: 820 })
     }
   }
 
   async republish() {
-    const buttons = this.ubrowsers.map((item, index) => `${index + 1}. ${item}`)
-    let button = await quickcommand.showButtonBox(buttons)
-    const buildEntryPattern = this.ubrowsers[button.id]
+    const choise = await quickcommand.showSelectList(
+      this.ubrowsers.map((item, index) => `${index}. ${item}`),
+      { optionType: "html" }
+    )
+
+    const buildEntryPattern = this.ubrowsers[choise.id]
 
     const entrys = buildEntryPattern.split(",")
     const newLen = Math.round(entrys.length / 2)
@@ -254,12 +290,12 @@ class Run {
     tempList.forEach((newBuildEntryPattern, index) =>
       this.openBrowser({
         buildEntryPattern: newBuildEntryPattern,
-        description: `[${this.time}] ${button.id} - ${index + 1}`,
+        description: `[${this.time}] ${choise.id} - ${index}`,
       })
     )
 
-    let button2 = await quickcommand.showButtonBox(["停止运行", "继续"])
-    if (button2.id === 0) {
+    let button = await quickcommand.showButtonBox(["停止运行", "继续"])
+    if (button.id === 0) {
       utools.outPlugin()
     } else {
       this.republish()
@@ -287,6 +323,9 @@ class Run {
     utools.copyText(txt)
     message(`📋 构建信息已复制`)
     // console.log(txt)
+
+    quickcommand.wakeUtools()
+    utools.showMainWindow()
   }
 }
 
@@ -296,4 +335,4 @@ try {
   error(e.message)
 }
 
-module.exports = () => { }
+module.exports = () => {}
