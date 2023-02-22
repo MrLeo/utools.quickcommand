@@ -1,3 +1,9 @@
+quickcommand.showWaitButton(() => {
+  utools.outPlugin()
+}, "停止运行")
+
+// require('/Users/leo/www/utools/quickcommand/src/project-publish.js')
+
 /**
  * https://gitee.com/mr.leo/utools.quickcommand/raw/main/src/project-publish.js
  * https://yuanliao.info/d/424-301/387
@@ -224,8 +230,6 @@ class Run {
     )
 
     quickcommand.wakeUtools()
-    utools.showMainWindow()
-
     const choise = await quickcommand.showSelectList(
       [
         ...this.ubrowsers.map((item, i) => `${i}. ${item}`),
@@ -273,6 +277,7 @@ class Run {
   }
 
   async republish() {
+    quickcommand.wakeUtools()
     const choise = await quickcommand.showSelectList(
       this.ubrowsers.map((item, index) => `${index}. ${item}`),
       { optionType: "html" }
@@ -324,8 +329,8 @@ class Run {
     message(`📋 构建信息已复制`)
     // console.log(txt)
 
-    quickcommand.wakeUtools()
     utools.showMainWindow()
+    quickcommand.wakeUtools()
   }
 }
 
