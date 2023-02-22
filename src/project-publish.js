@@ -219,7 +219,7 @@ class Run {
     /** https://u.tools/docs/developer/ubrowser.html */
     const u = utools.ubrowser
       .goto(`${this.jenkinsUrl}/build`)
-      .when("#choice-parameter-33702964895238218")
+      .wait("#choice-parameter-33702964895238218", 20000)
       .value("#choice-parameter-33702964895238218 > select", branch)
       .value(
         "#main-panel > form > table > tbody:nth-child(9) > tr:nth-child(1) > td.setting-main > div > input.setting-input",
