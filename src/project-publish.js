@@ -186,14 +186,20 @@ class Run {
       [
         ...this.ubrowsers.map((item, index) => `${index}. ${item}`),
         `<div style="background-color:#e74c3c;color:#fff;">全部</div>`,
+        `<div style="background-color:#ff6348;color:#fff;">选择异常构建</div>`,
       ],
       { optionType: "html" }
     )
 
     if (choise.id < this.ubrowsers.length) {
       this.pickPublish(choise.id)
-    } else {
+    } else if (choise.id === this.ubrowsers.length) {
       this.autoPublishAll()
+    } else {
+      quickcommand.setTimeout(() => {
+        this.republish()
+        this.output()
+      }, 100)
     }
   }
 
@@ -204,7 +210,7 @@ class Run {
       description: `[${this.time}] - ${index || 0}`,
     })
     if (index < this.ubrowsers.length - 1) {
-      quickcommand.setTimeout(() => this.autoPublishAll(index + 1), 1000)
+      quickcommand.setTimeout(() => this.autoPublishAll(index + 1), 5000)
     } else {
       quickcommand.setTimeout(() => {
         this.republish()
@@ -274,12 +280,14 @@ class Run {
       u.wait(2000).click("#yui-gen1-button")
       u.run({ width: 1000, height: 820 })
     }
+
+    return u
   }
 
   async republish() {
     quickcommand.wakeUtools()
     const choise = await quickcommand.showSelectList(
-      this.ubrowsers.map((item, index) => `${index}. ${item}`),
+      this.ubrowsers.map((item, index) => `♻️ rebuild: ${index}. ${item}`),
       { optionType: "html" }
     )
 
@@ -295,7 +303,7 @@ class Run {
     tempList.forEach((newBuildEntryPattern, index) =>
       this.openBrowser({
         buildEntryPattern: newBuildEntryPattern,
-        description: `[${this.time}] ${choise.id} - ${index}`,
+        description: `[${this.time}] - ${choise.id} - ${index}`,
       })
     )
 
