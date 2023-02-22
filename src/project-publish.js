@@ -267,7 +267,7 @@ class Run {
       u.devTools("right")
       u.run({ width: 2000, height: 2000 })
     } else {
-      // u.wait(2000).click("#yui-gen1-button")
+      u.wait(2000).click("#yui-gen1-button")
       u.run({ width: 1000, height: 820 })
     }
   }
