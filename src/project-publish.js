@@ -77,7 +77,9 @@ class Run {
 
   async getEntrys() {
     const pages = fs
-      .readdirSync(`${config.root}/${this.selectProject}/pages`, { withFileTypes: true })
+      .readdirSync(`${config.root}/${this.selectProject}/pages`, {
+        withFileTypes: true,
+      })
       .filter((dirent) => dirent.isDirectory())
       .map((dirent) => dirent.name)
       .filter((dir) => !/403|404|demo|__open-in-editor/.test(dir))
@@ -85,20 +87,23 @@ class Run {
 
     const extensions = []
     fs.existsSync(`${config.root}/${this.selectProject}/extensions`) &&
-    fs
-      .readdirSync(`${config.root}/${this.selectProject}/extensions`, { withFileTypes: true, })
-      .filter((dirent) => dirent.isDirectory())
-      .map((dirent) => {
-        // if (dirent.isFile() && dirent.name === "request-context.js") extensions.push(dirent.name)
-        if (dirent.isDirectory()) {
-          fs
-            .readdirSync(`${config.root}/${this.selectProject}/extensions/${dirent.name}`, { withFileTypes: true })
-            .map((extensionDirent) => extensions.push(extensionDirent.name))
-        }
-      })
+      fs
+        .readdirSync(`${config.root}/${this.selectProject}/extensions`, {
+          withFileTypes: true,
+        })
+        .filter((dirent) => dirent.isDirectory())
+        .map((dirent) => {
+          // if (dirent.isFile() && dirent.name === "request-context.js") extensions.push(dirent.name)
+          if (dirent.isDirectory()) {
+            fs.readdirSync(
+              `${config.root}/${this.selectProject}/extensions/${dirent.name}`,
+              { withFileTypes: true }
+            ).map((extensionDirent) => extensions.push(extensionDirent.name))
+          }
+        })
 
     this.entryList = [...new Set([...pages, ...extensions].filter(Boolean))]
-    console.log('[entryList] ->', this.entryList)
+    console.log("[entryList] ->", this.entryList)
   }
 
   async showEntrys(times = 0) {
@@ -107,14 +112,16 @@ class Run {
       options.push(`<div style="color:#70a1ff">反选</div>`)
       options.push(`<div style="color:red">选好了</div>`)
     }
-    const choise = await quickcommand.showSelectList(options, { optionType: "html" })
+    const choise = await quickcommand.showSelectList(options, {
+      optionType: "html",
+    })
     const text = quickcommand.htmlParse(choise.text).body.innerText
     if (text === "选好了") {
       quickcommand.setTimeout(() => this.getPublishInfo(), 0)
     } else if (text === "反选") {
       const tempIgnoreEntry = new Map([...this.ignoreEntry])
-      this.entryList.forEach((item, index)=>{
-        if(tempIgnoreEntry.has(item)) {
+      this.entryList.forEach((item, index) => {
+        if (tempIgnoreEntry.has(item)) {
           this.ignoreEntry.delete(item)
           quickcommand.updateSelectList(item, index)
         } else {
@@ -122,7 +129,7 @@ class Run {
           quickcommand.updateSelectList(`<del>${item}</del>`, index)
         }
       })
-      console.log('[ignoreEntry] ->', [...this.ignoreEntry])
+      console.log("[ignoreEntry] ->", [...this.ignoreEntry])
       await this.showEntrys(++times)
     } else {
       if (this.ignoreEntry.has(text)) {
@@ -132,13 +139,15 @@ class Run {
         this.ignoreEntry.set(text, choise.id)
         quickcommand.updateSelectList(`<del>${text}</del>`, choise.id)
       }
-      console.log('[ignoreEntry] ->', [...this.ignoreEntry])
+      console.log("[ignoreEntry] ->", [...this.ignoreEntry])
       await this.showEntrys(++times)
     }
   }
 
   async getPublishInfo() {
-    this.publishEntry = this.entryList.filter((entry) => ![...this.ignoreEntry.keys()].includes(entry))
+    this.publishEntry = this.entryList.filter(
+      (entry) => ![...this.ignoreEntry.keys()].includes(entry)
+    )
 
     await this.selectPublishEnv()
 
@@ -152,14 +161,17 @@ class Run {
   }
 
   async selectPublishEnv() {
-    const choise = await quickcommand.showSelectList([
-      `<div style="color:#3498db">打开Jenkins - Pre</div>`,
-      `<div style="color:#3498db">打开Jenkins - Prod</div>`,
-      `<div style="color:#95a5a6">取消</div>`,
-      `<div style="color:#e74c3c">Debug</div>`,
-    ], { optionType: "html" })
+    const choise = await quickcommand.showSelectList(
+      [
+        `<div style="color:#3498db">打开Jenkins - Pre</div>`,
+        `<div style="color:#3498db">打开Jenkins - Prod</div>`,
+        `<div style="color:#95a5a6">取消</div>`,
+        `<div style="color:#e74c3c">Debug</div>`,
+      ],
+      { optionType: "html" }
+    )
     this.publishEnv = ["pre", "prod", "", "debug"][choise.id]
-    if(!this.publishEnv) utools.outPlugin()
+    if (!this.publishEnv) utools.outPlugin()
   }
 
   getBatchEntry() {
@@ -183,31 +195,34 @@ class Run {
   }
 
   async startPublish() {
-    const choise = await quickcommand.showSelectList([
-      ...this.ubrowsers.map((item, index) => `${index}. ${item}`),
-      `<div style="background-color:#e74c3c;color:#fff;">全部</div>`,
-      `<div style="background-color:#ff6348;color:#fff;">选择异常构建</div>`,
-    ], { optionType: "html" })
+    const choise = await quickcommand.showSelectList(
+      [
+        ...this.ubrowsers.map((item, index) => `${index}. ${item}`),
+        `<div style="background-color:#e74c3c;color:#fff;">全部</div>`,
+        `<div style="background-color:#ff6348;color:#fff;">选择异常构建</div>`,
+      ],
+      { optionType: "html" }
+    )
 
     if (choise.id < this.ubrowsers.length) {
       this.pickPublish(choise.id)
     } else if (choise.id === this.ubrowsers.length) {
       this.autoPublishAll()
     } else {
-      quickcommand.setTimeout(()=>{
+      quickcommand.setTimeout(() => {
         this.republish()
         this.output()
       }, 100)
     }
   }
 
-  autoPublishAll(index = 0){
+  autoPublishAll(index = 0) {
     const buildEntryPattern = this.ubrowsers[index]
-    this.openBrowser({ buildEntryPattern, description: `[${this.time}] - ${index || 0}` })
+    this.openBrowser({ buildEntryPattern, index })
     if (index < this.ubrowsers.length - 1) {
-      quickcommand.setTimeout(()=> this.autoPublishAll(index + 1), 5000)
+      quickcommand.setTimeout(() => this.autoPublishAll(index + 1), 5000)
     } else {
-      quickcommand.setTimeout(()=>{
+      quickcommand.setTimeout(() => {
         this.republish()
         this.output()
       }, 100)
@@ -216,28 +231,37 @@ class Run {
 
   async pickPublish(index = 0) {
     const buildEntryPattern = this.ubrowsers[index]
-    this.openBrowser({ buildEntryPattern, description: `[${this.time}] - ${index || 0}` })
+    this.openBrowser({ buildEntryPattern, index })
 
-    quickcommand.updateSelectList(`<div style="color:#70a1ff;">继续选择异常构建</div>`, this.ubrowsers.length)
-    quickcommand.updateSelectList(`<del>${index}. ${buildEntryPattern}</del>`, index)
+    quickcommand.updateSelectList(
+      `<div style="color:#70a1ff;">继续选择异常构建</div>`,
+      this.ubrowsers.length
+    )
+    quickcommand.updateSelectList(
+      `<del>${index}. ${buildEntryPattern}</del>`,
+      index
+    )
 
     quickcommand.wakeUtools()
-    const choise = await quickcommand.showSelectList([
-      ...this.ubrowsers.map((item, i) => `${i}. ${item}`),
-      `<div style="color:#70a1ff;">继续选择异常构建</div>`,
-    ], { optionType: "html" })
+    const choise = await quickcommand.showSelectList(
+      [
+        ...this.ubrowsers.map((item, i) => `${i}. ${item}`),
+        `<div style="color:#70a1ff;">继续选择异常构建</div>`,
+      ],
+      { optionType: "html" }
+    )
 
     if (choise.id < this.ubrowsers.length) {
       this.pickPublish(choise.id)
     } else {
-      quickcommand.setTimeout(()=>{
+      quickcommand.setTimeout(() => {
         this.republish()
         this.output()
       }, 100)
     }
   }
 
-  openBrowser({ buildEntryPattern, description }) {
+  openBrowser({ buildEntryPattern, index, republishIndex }) {
     if (!buildEntryPattern) throw new Error("buildEntryPattern is required")
 
     const branch = this.publishEnv === "prod" ? "master" : "pre"
@@ -245,7 +269,7 @@ class Run {
     /** https://u.tools/docs/developer/ubrowser.html */
     const u = utools.ubrowser
       .goto(`${this.jenkinsUrl}/build`)
-      .wait("#choice-parameter-33702964895238218", 20000)
+      .wait("#choice-parameter-33702964895238218", 50000)
       .value("#choice-parameter-33702964895238218 > select", branch)
       .value(
         "#main-panel > form > table > tbody:nth-child(9) > tr:nth-child(1) > td.setting-main > div > input.setting-input",
@@ -253,7 +277,11 @@ class Run {
       )
       .value(
         "#main-panel > form > table > tbody:nth-child(10) > tr:nth-child(1) > td.setting-main > div > textarea",
-        description
+        `[${index || 0}${
+          isNaN(republishIndex) ? "" : "." + republishIndex
+        }] ${buildEntryPattern.substring(0, 20)}${
+          buildEntryPattern.length > 20 ? "……" : ""
+        }`
       )
 
     if (this.publishEnv === "debug") {
@@ -286,7 +314,8 @@ class Run {
     tempList.forEach((newBuildEntryPattern, index) =>
       this.openBrowser({
         buildEntryPattern: newBuildEntryPattern,
-        description: `[${this.time}] - ${choise.id} - ${index}`,
+        index: choise.id,
+        republishIndex: index,
       })
     )
 
@@ -301,7 +330,6 @@ class Run {
   output() {
     const txt = JSON.stringify(
       {
-        time: this.time,
         jenkinsUrl: this.jenkinsUrl,
         publishUrl: this.publishUrl,
         ubrowsers: this.ubrowsers,
