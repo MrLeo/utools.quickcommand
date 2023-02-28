@@ -24,7 +24,7 @@ const config = {
   /** Jenkins域名 */
   jenkinsBaseUrl: `https://jenkins.dev.zhaopin.com`,
   /** 初始页面批次大小 */
-  batchSize: 5,
+  batchSize: 4,
 }
 
 class Run {
@@ -103,7 +103,7 @@ class Run {
         })
 
     this.entryList = [...new Set([...pages, ...extensions].filter(Boolean))]
-    console.log("[entryList] ->", this.entryList)
+    // console.log('[entryList] ->', this.entryList)
   }
 
   async showEntrys(times = 0) {
@@ -129,7 +129,7 @@ class Run {
           quickcommand.updateSelectList(`<del>${item}</del>`, index)
         }
       })
-      console.log("[ignoreEntry] ->", [...this.ignoreEntry])
+      // console.log('[ignoreEntry] ->', [...this.ignoreEntry])
       await this.showEntrys(++times)
     } else {
       if (this.ignoreEntry.has(text)) {
@@ -139,7 +139,7 @@ class Run {
         this.ignoreEntry.set(text, choise.id)
         quickcommand.updateSelectList(`<del>${text}</del>`, choise.id)
       }
-      console.log("[ignoreEntry] ->", [...this.ignoreEntry])
+      // console.log('[ignoreEntry] ->', [...this.ignoreEntry])
       await this.showEntrys(++times)
     }
   }
@@ -234,20 +234,13 @@ class Run {
     this.openBrowser({ buildEntryPattern, index })
 
     quickcommand.updateSelectList(
-      `<div style="color:#70a1ff;">继续选择异常构建</div>`,
-      this.ubrowsers.length
-    )
-    quickcommand.updateSelectList(
       `<del>${index}. ${buildEntryPattern}</del>`,
       index
     )
 
-    quickcommand.wakeUtools()
+    // quickcommand.wakeUtools()
     const choise = await quickcommand.showSelectList(
-      [
-        ...this.ubrowsers.map((item, i) => `${i}. ${item}`),
-        `<div style="color:#70a1ff;">继续选择异常构建</div>`,
-      ],
+      [...this.ubrowsers.map((item, i) => `${i}. ${item}`), ``, ``],
       { optionType: "html" }
     )
 
@@ -279,8 +272,8 @@ class Run {
         "#main-panel > form > table > tbody:nth-child(10) > tr:nth-child(1) > td.setting-main > div > textarea",
         `[${index || 0}${
           isNaN(republishIndex) ? "" : "." + republishIndex
-        }] ${buildEntryPattern.substring(0, 20)}${
-          buildEntryPattern.length > 20 ? "……" : ""
+        }] ${buildEntryPattern.substring(0, 30)}${
+          buildEntryPattern.length > 30 ? "…" : ""
         }`
       )
 
@@ -296,7 +289,7 @@ class Run {
   }
 
   async republish() {
-    quickcommand.wakeUtools()
+    // quickcommand.wakeUtools()
     const choise = await quickcommand.showSelectList(
       this.ubrowsers.map((item, index) => `♻️ rebuild: ${index}. ${item}`),
       { optionType: "html" }
