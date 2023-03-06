@@ -291,6 +291,7 @@ class Run {
      * 填写构建信息
      */
     u.wait("#choice-parameter-33702964895238218", 50000)
+      .wait(2000)
       .value("#choice-parameter-33702964895238218 > select", branch)
       .value(
         "#main-panel > form > table > tbody:nth-child(9) > tr:nth-child(1) > td.setting-main > div > input.setting-input",
@@ -410,7 +411,6 @@ class Run {
   }
 }
 
-
 try {
   new Run()
 } catch (e) {
@@ -419,4 +419,3 @@ try {
 // require('/Users/leo/www/utools/quickcommand/src/project-publish.js')
 
 // module.exports = Run
-
