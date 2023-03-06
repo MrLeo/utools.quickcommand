@@ -7,8 +7,7 @@
 const fs = require("fs")
 const iconv = require("iconv-lite")
 
-const decode = (data) =>
-  iconv.decode(data, utools.isWindows() ? "cp936" : "utf8")
+const decode = (data) => iconv.decode(data, utools.isWindows() ? "cp936" : "utf8")
 const log = (data) => console.log(decode(data))
 const error = (data) => console.error(decode(data))
 
@@ -416,6 +415,7 @@ try {
 } catch (e) {
   error(e.message)
 }
+
 // require('/Users/leo/www/utools/quickcommand/src/project-publish.js')
 
 // module.exports = Run
