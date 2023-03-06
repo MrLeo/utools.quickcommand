@@ -1,9 +1,3 @@
-quickcommand.showWaitButton(() => {
-  utools.outPlugin()
-}, "停止运行")
-
-// require('/Users/leo/www/utools/quickcommand/src/project-publish.js')
-
 /**
  * https://gitee.com/mr.leo/utools.quickcommand/raw/main/src/project-publish.js
  * https://yuanliao.info/d/424-301/387
@@ -25,6 +19,13 @@ const config = {
   jenkinsBaseUrl: `https://jenkins.dev.zhaopin.com`,
   /** 初始页面批次大小 */
   batchSize: 4,
+
+  erp: {
+    username: "",
+    password: "",
+  },
+
+  running: false,
 }
 
 class Run {
@@ -64,6 +65,12 @@ class Run {
       .sort()
 
     this.showDirs()
+
+    config.running = true
+
+    quickcommand.showWaitButton(() => {
+      this.close()
+    }, "停止运行")
   }
 
   async showDirs() {
@@ -171,7 +178,7 @@ class Run {
       { optionType: "html" }
     )
     this.publishEnv = ["pre", "prod", "", "debug"][choise.id]
-    if (!this.publishEnv) utools.outPlugin()
+    if (!this.publishEnv) this.close()
   }
 
   getBatchEntry() {
@@ -198,8 +205,8 @@ class Run {
     const choise = await quickcommand.showSelectList(
       [
         ...this.ubrowsers.map((item, index) => `${index}. ${item}`),
-        `<div style="background-color:#e74c3c;color:#fff;">全部</div>`,
-        `<div style="background-color:#ff6348;color:#fff;">选择异常构建</div>`,
+        `<div style="background-color:#ff6348;color:#fff;">全部</div>`,
+        `<div style="color:#0984e3;">选择异常构建</div>`,
       ],
       { optionType: "html" }
     )
@@ -220,7 +227,11 @@ class Run {
     const buildEntryPattern = this.ubrowsers[index]
     this.openBrowser({ buildEntryPattern, index })
     if (index < this.ubrowsers.length - 1) {
-      quickcommand.setTimeout(() => this.autoPublishAll(index + 1), 5000)
+      config.running &&
+        quickcommand.setTimeout(
+          () => config.running && this.autoPublishAll(index + 1),
+          3000
+        )
     } else {
       quickcommand.setTimeout(() => {
         this.republish()
@@ -260,9 +271,26 @@ class Run {
     const branch = this.publishEnv === "prod" ? "master" : "pre"
 
     /** https://u.tools/docs/developer/ubrowser.html */
-    const u = utools.ubrowser
-      .goto(`${this.jenkinsUrl}/build`)
-      .wait("#choice-parameter-33702964895238218", 50000)
+    const u = utools.ubrowser.goto(`${this.jenkinsUrl}/build`)
+
+    if (this.publishEnv === "debug") {
+      u.devTools("right")
+    }
+
+    /**
+     * 未登录处理
+     */
+    u.when("#sel_account")
+      .click("#sel_account")
+      .value("#username", config.erp.username)
+      .value("#password", config.erp.password)
+      .click("#login")
+      .end()
+
+    /**
+     * 填写构建信息
+     */
+    u.wait("#choice-parameter-33702964895238218", 50000)
       .value("#choice-parameter-33702964895238218 > select", branch)
       .value(
         "#main-panel > form > table > tbody:nth-child(9) > tr:nth-child(1) > td.setting-main > div > input.setting-input",
@@ -277,9 +305,39 @@ class Run {
         }`
       )
 
+    /**
+     * 跳转 Console Output
+     */
+    u.wait(2000)
+      .when((jenkinsUrl) => {
+        console.info("jenkinsUrl ->", jenkinsUrl)
+        const lastBuildNode = document.querySelector(
+          "#buildHistory > div.row.pane-content > table > tbody > tr:nth-child(2) > td > div.block.wrap.build-name-controls > div.pane.build-name.wrapped"
+        )
+        if (!lastBuildNode) return false
+        const lastBuildId = lastBuildNode.innerText
+          .replace("#", "")
+          .replace("\n ", "")
+          .replace(/\s*|\n*/, "")
+        const url = `${jenkinsUrl}/${decodeURIComponent(lastBuildId)}/console`
+        console.log({ lastBuildId, url })
+        window.location.href = url
+        return true
+      }, this.jenkinsUrl)
+      .wait(2000)
+      .wait(() => {
+        const mainPanel = document.querySelector("#main-panel")
+        console.log({ mainPanel })
+        if (!mainPanel) {
+          setTimeout(() => window.location.reload(), 40000)
+          return false
+        }
+        return true
+      }, 30 * 60 * 60 * 1000)
+      .end()
+
     if (this.publishEnv === "debug") {
-      u.devTools("right")
-      u.run({ width: 2000, height: 2000 })
+      u.run({ width: 8000, height: 5000 })
     } else {
       u.wait(2000).click("#yui-gen1-button")
       u.run({ width: 1000, height: 820 })
@@ -314,10 +372,16 @@ class Run {
 
     let button = await quickcommand.showButtonBox(["停止运行", "继续"])
     if (button.id === 0) {
-      utools.outPlugin()
+      this.close()
     } else {
       this.republish()
     }
+  }
+
+  close() {
+    config.running = false
+    utools.clearUBrowserCache()
+    utools.outPlugin()
   }
 
   output() {
@@ -341,15 +405,18 @@ class Run {
     message(`📋 构建信息已复制`)
     // console.log(txt)
 
-    utools.showMainWindow()
-    quickcommand.wakeUtools()
+    // utools.showMainWindow()
+    // quickcommand.wakeUtools()
   }
 }
+
 
 try {
   new Run()
 } catch (e) {
   error(e.message)
 }
+// require('/Users/leo/www/utools/quickcommand/src/project-publish.js')
 
-module.exports = () => {}
+// module.exports = Run
+
